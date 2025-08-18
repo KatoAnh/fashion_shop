@@ -6,7 +6,7 @@ export default function ProductCard({ product }) {
   const price = Number(variant?.sale_price ?? variant?.price);
   const originalPrice = Number(variant?.price);
   const thumbnailUrl = product.thumbnail
-    ? `http://localhost:8000/storage/${product.thumbnail}`
+    ? `${process.env.REACT_APP_API_URL}/${product.thumbnail}`
     : 'https://via.placeholder.com/300x300?text=No+Image';
 
   const discountPercent = variant?.sale_price

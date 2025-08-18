@@ -13,7 +13,7 @@ function SubmitReviewForm({ variantId, orderId }) {
     e.preventDefault();
     try {
       const res = await axios.post(
-        'http://127.0.0.1:8000/api/reviews',
+        `${process.env.REACT_APP_API_URL}/reviews`,
         {
           order_id: orderId,
           product_variant_id: variantId,

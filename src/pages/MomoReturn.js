@@ -27,7 +27,7 @@ export default function MomoReturn() {
       }
 
       try {
-        const res = await axios.get(`http://localhost:8000/api/payment/momo/return?orderId=${orderId}&resultCode=${resultCode}`);
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/payment/momo/return?orderId=${orderId}&resultCode=${resultCode}`);
         console.log('Kết quả API:', res.data);
         setResult(res.data);
         if (res.data?.data?.payment_status === 'paid') {
