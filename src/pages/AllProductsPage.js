@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Container, Row, Col, Spinner, Alert, Form, Button
+  Container, Row, Col, Spinner, Alert, Form, Button, Card
 } from 'react-bootstrap';
 import ProductCard from '../components/ProductCard';
 
@@ -79,7 +79,7 @@ export default function AllProductsPage() {
         const min = Number(minStr ?? 0);
         const max = Number(maxStr ?? Infinity);
         result = result.filter(p => {
-          const price = Number(p.price_original ?? p.price ?? 0);
+          const price = Number(p.price_products ?? p.price ?? 0);
           return price >= min && price <= max;
         });
       }
@@ -101,11 +101,11 @@ export default function AllProductsPage() {
           result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
           break;
         case 'price_asc':
-          result.sort((a, b) => (Number(a.price_original ?? a.price ?? 0)) - (Number(b.price_original ?? b.price ?? 0)));
-          break;
+            result.sort((a, b) => Number(a.price ?? 0) - Number(b.price ?? 0));
+            break;
         case 'price_desc':
-          result.sort((a, b) => (Number(b.price_original ?? b.price ?? 0)) - (Number(a.price_original ?? a.price ?? 0)));
-          break;
+            result.sort((a, b) => Number(b.price ?? 0) - Number(a.price ?? 0));
+            break;
         default:
           break;
       }
@@ -176,106 +176,152 @@ export default function AllProductsPage() {
   );
 
   return (
-    <Container className="py-5">
-      <h2 className="mb-4">Tất cả sản phẩm</h2>
-      <Row>
-        {/* BỘ LỌC BÊN TRÁI */}
-        <Col md={3}>
-          <Form onSubmit={handleFilterSubmit}>
-            {/* Danh mục */}
-            <SelectBox
-              label="Danh mục"
-              value={filters.category}
-              options={categories}
-              onChange={val => handleFilterChange('category', val)}
-            />
-
-            {/* Mức giá */}
-            <SelectBox
-              label="Mức giá"
-              value={filters.price}
-              options={[
-                { id: '0-200000', name: 'Dưới 200k' },
-                { id: '200000-500000', name: '200k - 500k' },
-                { id: '500000-1000000', name: '500k - 1 triệu' },
-              ]}
-              onChange={val => handleFilterChange('price', val)}
-            />
-
-            {/* Size */}
-            <SelectBox
-              label="Size"
-              value={filters.size}
-              options={sizes}
-              onChange={val => handleFilterChange('size', val)}
-            />
-
-            <div className="d-grid gap-2">
-              <Button type="submit" variant="primary">
-                🔍 Lọc
-              </Button>
-              <Button variant="outline-primary" onClick={handleResetFilters}>
-                🔄 Đặt lại
-              </Button>
+    <>
+      <style>{`
+        .products-bg {
+          background: linear-gradient(120deg, #f0f4ff 0%, #f8fafc 100%);
+          min-height: 100vh;
+        }
+        .products-sidebar {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 4px 24px rgba(59,130,246,0.07);
+          padding: 2rem 1.5rem;
+          margin-bottom: 2rem;
+        }
+        .products-sidebar .form-label {
+          font-weight: 600;
+          color: #2563eb;
+        }
+        .products-sidebar .form-select {
+          border-radius: 8px;
+        }
+        .products-header {
+          background: #fff;
+          border-radius: 18px;
+          box-shadow: 0 2px 12px rgba(59,130,246,0.06);
+          padding: 1.5rem 2rem;
+          margin-bottom: 2rem;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .products-header h2 {
+          font-weight: 700;
+          color: #2563eb;
+          margin-bottom: 0;
+        }
+        .products-sort {
+          min-width: 200px;
+        }
+        .products-list {
+          min-height: 400px;
+        }
+        .products-loadmore {
+          margin-top: 2rem;
+        }
+        @media (max-width: 900px) {
+          .products-sidebar {
+            padding: 1rem 0.5rem;
+          }
+          .products-header {
+            padding: 1rem 0.5rem;
+          }
+        }
+      `}</style>
+      <div className="products-bg py-5">
+        <Container>
+          <div className="products-header mb-4">
+            <h2 className="mb-0">🛍️ Tất cả sản phẩm</h2>
+            <div className="d-flex align-items-center gap-3">
+              <span className="fw-semibold text-secondary">
+                {anyFilterSelected
+                  ? <>{total} sản phẩm được tìm thấy</>
+                  : <>Tất cả sản phẩm</>
+                }
+              </span>
+              <Form.Select
+                className="products-sort"
+                value={filters.sort}
+                onChange={(e) => handleFilterChange('sort', e.target.value)}
+              >
+                <option value="">Sắp xếp</option>
+                <option value="latest">Mới nhất</option>
+                <option value="price_asc">Giá tăng dần</option>
+                <option value="price_desc">Giá giảm dần</option>
+              </Form.Select>
             </div>
-          </Form>
-        </Col>
-
-        {/* DANH SÁCH SẢN PHẨM */}
-        <Col md={9}>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              {anyFilterSelected ? (
-                <span><strong>{total}</strong> sản phẩm được tìm thấy</span>
-              ) : (
-                <span className="text-muted">Tất cả sản phẩm</span>
-              )}
-            </div>
-
-            <Form.Select
-              style={{ width: '200px' }}
-              value={filters.sort}
-              onChange={(e) => handleFilterChange('sort', e.target.value)}
-            >
-              <option value="">Sắp xếp</option>
-              <option value="latest">Mới nhất</option>
-              <option value="price_asc">Giá tăng dần</option>
-              <option value="price_desc">Giá giảm dần</option>
-            </Form.Select>
           </div>
-
-          {loading && page === 1 ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" />
-            </div>
-          ) : products.length === 0 && anyFilterSelected ? (
-            <Alert variant="warning">Không tìm thấy sản phẩm phù hợp</Alert>
-          ) : (
-            <>
-              <Row>
-                {products.map(product => (
-                  <Col key={product.id} md={4} className="mb-4">
-                    <ProductCard product={product} />
-                  </Col>
-                ))}
-              </Row>
-
-              {loading && page > 1 && (
-                <div className="text-center py-4">
-                  <Spinner animation="border" />
-                </div>
-              )}
-
-              {hasMore && !loading && (
-                <div className="text-center mt-4">
-                  <Button onClick={handleLoadMore} variant="outline-dark">Xem thêm</Button>
-                </div>
-              )}
-            </>
-          )}
-        </Col>
-      </Row>
-    </Container>
+          <Row>
+            {/* Sidebar bộ lọc */}
+            <Col md={3}>
+              <Card className="products-sidebar">
+                <Card.Body>
+                  <Form onSubmit={handleFilterSubmit}>
+                    <SelectBox
+                      label="Danh mục"
+                      value={filters.category}
+                      options={categories}
+                      onChange={val => handleFilterChange('category', val)}
+                    />
+                    <SelectBox
+                      label="Mức giá"
+                      value={filters.price}
+                      options={[
+                        { id: '0-200000', name: 'Dưới 200k' },
+                        { id: '200000-500000', name: '200k - 500k' },
+                        { id: '500000-1000000', name: '500k - 1 triệu' },
+                      ]}
+                      onChange={val => handleFilterChange('price', val)}
+                    />
+                    <div className="d-grid gap-2 mt-3">
+                      <Button variant="outline-primary" onClick={handleResetFilters}>
+                        🔄 Đặt lại bộ lọc
+                      </Button>
+                    </div>
+                  </Form>
+                </Card.Body>
+              </Card>
+            </Col>
+            {/* Danh sách sản phẩm */}
+            <Col md={9}>
+              <div className="products-list">
+                {loading && page === 1 ? (
+                  <div className="text-center py-5">
+                    <Spinner animation="border" />
+                  </div>
+                ) : products.length === 0 && anyFilterSelected ? (
+                  <Alert variant="warning">Không tìm thấy sản phẩm phù hợp</Alert>
+                ) : (
+                  <>
+                    <Row>
+                      {products.map(product => (
+                        <Col key={product.id} md={4} className="mb-4">
+                          <ProductCard product={product} />
+                        </Col>
+                      ))}
+                    </Row>
+                    {loading && page > 1 && (
+                      <div className="text-center py-4">
+                        <Spinner animation="border" />
+                      </div>
+                    )}
+                    {hasMore && !loading && (
+                      <div className="products-loadmore text-center">
+                        <Button onClick={handleLoadMore} variant="primary" size="lg">
+                          Xem thêm sản phẩm
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    </>
   );
 }
 
